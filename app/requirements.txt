@@ -1,4 +1,3 @@
 fastapi==0.109.0
 uvicorn==0.27.0
-azure-monitor-opentelemetry==1.1.1
-opentelemetry-instrumentation-fastapi
+azure-monitor-opentelemetry==1.8.3
