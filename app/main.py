@@ -7,7 +7,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 # Configure Azure Monitor
 # The connection string will be automatically read from the APPLICATIONINSIGHTS_CONNECTION_STRING environment variable
 try:
-    configure_azure_monitor()
+    configure_azure_monitor(enable_live_metrics=True)
 except Exception as e:
     print(f"Failed to configure Azure Monitor: {e}")
 

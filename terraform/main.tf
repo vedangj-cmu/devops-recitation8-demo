@@ -56,6 +56,12 @@ resource "azurerm_container_group" "aci" {
     }
   }
 
+  image_registry_credential {
+    server   = "index.docker.io"
+    username = var.docker_username
+    password = var.docker_password
+  }
+
   tags = {
     environment = "demo"
   }
