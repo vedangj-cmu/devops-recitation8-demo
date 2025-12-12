@@ -1,6 +1,6 @@
 #!/bin/bash
 
-URL="http://monitoring-demo-vedang.eastus.azurecontainer.io:8000"
+URL="http://51.8.23.80"
 DURATION=180 # 3 minutes in seconds
 START_TIME=$(date +%s)
 END_TIME=$((START_TIME + DURATION))

@@ -1,3 +1,7 @@
-fastapi==0.109.0
-uvicorn==0.27.0
-azure-monitor-opentelemetry==1.8.3
+fastapi
+uvicorn
+opentelemetry-api==1.38.0
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-asgi
+azure-monitor-opentelemetry-exporter

@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.13"
+    }
   }
 }
 
@@ -11,55 +15,41 @@ provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "rg" {
-  name     = "monitoring-demo-rg"
+resource "azurerm_resource_group" "aks_rg" {
+  name     = "monitoring-demo-aks-rg"
   location = "East US"
 }
 
-resource "azurerm_log_analytics_workspace" "workspace" {
-  name                = "monitoring-demo-workspace"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+resource "azurerm_log_analytics_workspace" "aks_workspace" {
+  name                = "monitoring-demo-aks-workspace"
+  location            = azurerm_resource_group.aks_rg.location
+  resource_group_name = azurerm_resource_group.aks_rg.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
 
-resource "azurerm_application_insights" "appinsights" {
-  name                = "monitoring-demo-ai"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  workspace_id        = azurerm_log_analytics_workspace.workspace.id
+resource "azurerm_application_insights" "aks_appinsights" {
+  name                = "monitoring-demo-aks-ai"
+  location            = azurerm_resource_group.aks_rg.location
+  resource_group_name = azurerm_resource_group.aks_rg.name
+  workspace_id        = azurerm_log_analytics_workspace.aks_workspace.id
   application_type    = "web"
 }
 
-resource "azurerm_container_group" "aci" {
-  name                = "monitoring-demo-aci"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  ip_address_type     = "Public"
-  dns_name_label      = "monitoring-demo-vedang"
-  os_type             = "Linux"
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "monitoring-demo-aks"
+  location            = azurerm_resource_group.aks_rg.location
+  resource_group_name = azurerm_resource_group.aks_rg.name
+  dns_prefix          = "monitoring-demo-aks"
 
-  container {
-    name   = "monitoring-demo-app"
-    image  = "vedangj044/monitoring-demo:latest"
-    cpu    = "0.5"
-    memory = "1.5"
-
-    ports {
-      port     = 8000
-      protocol = "TCP"
-    }
-
-    environment_variables = {
-      APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.appinsights.connection_string
-    }
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_B2s"
   }
 
-  image_registry_credential {
-    server   = "index.docker.io"
-    username = var.docker_username
-    password = var.docker_password
+  identity {
+    type = "SystemAssigned"
   }
 
   tags = {
@@ -67,11 +57,78 @@ resource "azurerm_container_group" "aci" {
   }
 }
 
-output "app_url" {
-  value = "http://${azurerm_container_group.aci.fqdn}:8000"
+provider "kubernetes" {
+  host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
 }
 
-output "instrumentation_key" {
-  value     = azurerm_application_insights.appinsights.instrumentation_key
-  sensitive = true
+resource "kubernetes_deployment" "app" {
+  metadata {
+    name = "monitoring-demo-app"
+    labels = {
+      app = "monitoring-demo"
+    }
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "monitoring-demo"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "monitoring-demo"
+        }
+      }
+
+      spec {
+        container {
+          image = "vedangj044/monitoring-demo:latest"
+          name  = "monitoring-demo-app"
+
+          port {
+            container_port = 8000
+          }
+
+          env {
+            name  = "APPLICATIONINSIGHTS_CONNECTION_STRING"
+            value = azurerm_application_insights.aks_appinsights.connection_string
+          }
+
+          env {
+            name  = "OTEL_SERVICE_NAME"
+            value = "monitoring-demo-aks"
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "app_service" {
+  metadata {
+    name = "monitoring-demo-service"
+  }
+  spec {
+      selector = {
+        app = kubernetes_deployment.app.metadata.0.labels.app
+      }
+      port {
+        port        = 80
+        target_port = 8000
+      }
+
+      type = "LoadBalancer"
+  }
+}
+
+output "aks_app_url" {
+  value = "http://${kubernetes_service.app_service.status.0.load_balancer.0.ingress.0.ip}"
 }

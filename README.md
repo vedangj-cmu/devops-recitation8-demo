@@ -17,8 +17,8 @@ The app is instrumented with **Azure Monitor OpenTelemetry** to automatically co
 2.  **Infrastructure**:
     - Navigate to the `terraform/` directory.
     - Run `terraform init`.
-    - Run `terraform apply` to create the Resource Group, Application Insights, and Azure Container Instance.
-    - The output will provide the `app_url`.
+    - Run `terraform apply` to create the Resource Group, Application Insights, and **Azure Kubernetes Service (AKS)** cluster.
+    - The output will provide the `aks_app_url`.
 
 ## Verification & Insights
 
@@ -27,8 +27,8 @@ Once deployed and running, you can verify the continuous monitoring layout in th
 ### 1. Generating Traffic
 Use `curl` or a browser to hit the endpoints repeatedly to generate data:
 ```bash
-# Get the URL from terraform output or Azure Portal
-URL="http://<your-aci-dns-label>.<region>.azurecontainer.io:8000"
+# Get the URL from terraform output or Azure Portal (e.g., Load Balancer IP)
+URL="http://<your-aks-loadbalancer-ip>"
 
 # Run a loop to generate traffic
 while true; do
@@ -56,4 +56,4 @@ Go to your **Application Insights** resource in the Azure Portal:
     - Check the `/slow` endpoint to see the distribution of response times (100ms vs 3000ms).
 
 - **Application Map**:
-    - Shows the components and their dependencies. You should see your containerized app node making calls (if any external dependencies existed, they would show here).
+    - Shows the components and their dependencies. You should see your AKS deployment making calls (if any external dependencies existed, they would show here).

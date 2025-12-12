@@ -13,5 +13,4 @@ variable "docker_password" {
   description = "Docker Hub Password/Token"
   type        = string
   sensitive   = true
-  default     = "ky3/8Xn?R%vF2M#"
 }
