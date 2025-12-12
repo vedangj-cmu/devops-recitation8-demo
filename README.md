@@ -57,3 +57,17 @@ Go to your **Application Insights** resource in the Azure Portal:
 
 - **Application Map**:
     - Shows the components and their dependencies. You should see your AKS deployment making calls (if any external dependencies existed, they would show here).
+
+
+### Queries for Logs
+```
+traces
+| order by timestamp desc
+| take 100
+```
+
+```
+requests
+| order by timestamp desc
+| take 100
+```

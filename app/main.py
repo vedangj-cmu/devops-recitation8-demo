@@ -46,8 +46,8 @@ def setup_otel():
     tracer_provider = TracerProvider(resource=resource)
 
     # Add a span processor to export spans to Azure Monitor
-    # A span is the line you see in on tracing tools
     # BatchSpanProcessor groups spans into batches before exporting them to Azure Monitor
+    # A span is the line you see in on tracing
     tracer_provider.add_span_processor(
         BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=conn_str))
     )

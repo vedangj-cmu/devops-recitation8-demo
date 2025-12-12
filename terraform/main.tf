@@ -106,6 +106,8 @@ resource "kubernetes_deployment" "app" {
             name  = "OTEL_SERVICE_NAME"
             value = "monitoring-demo-aks"
           }
+
+          image_pull_policy = "Always"
         }
       }
     }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-URL="http://51.8.23.80"
+URL="http://<IP>"
 DURATION=180 # 3 minutes in seconds
 START_TIME=$(date +%s)
 END_TIME=$((START_TIME + DURATION))
